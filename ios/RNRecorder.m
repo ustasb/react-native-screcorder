@@ -179,12 +179,18 @@
 
 - (NSString*)saveImage:(UIImage*)image
 {
-   NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
    NSString *name = [[NSProcessInfo processInfo] globallyUniqueString];
-   name = [name stringByAppendingString:@".png"];
-   NSString *filePath = [[paths objectAtIndex:0] stringByAppendingPathComponent:name];
-   
-   [UIImagePNGRepresentation(image) writeToFile:filePath atomically:YES];
+   name = [name stringByAppendingString:@".jpeg"];
+   NSString *filePath = [NSTemporaryDirectory() stringByAppendingPathComponent:name];
+
+   if ([_device isEqual: @"front"]) {
+      image = [UIImage imageWithCGImage:image.CGImage
+                                  scale:image.scale
+                            orientation:UIImageOrientationLeftMirrored];
+   }
+
+   [UIImageJPEGRepresentation(image, 1.0) writeToFile:filePath atomically:YES];
+
    return filePath;
 }
 
