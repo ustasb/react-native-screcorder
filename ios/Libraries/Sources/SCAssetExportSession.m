@@ -58,6 +58,7 @@
         _videoConfiguration = [SCVideoConfiguration new];
         _timeRange = CMTimeRangeMake(kCMTimeZero, kCMTimePositiveInfinity);
         _translatesFilterIntoComposition = YES;
+        _shouldOptimizeForNetworkUse = NO;
     }
 
     return self;
@@ -169,14 +170,31 @@ static CGContextRef SCCreateContextFromPixelBuffer(CVPixelBufferRef pixelBuffer)
     UIView<SCVideoOverlay> *overlay = self.videoConfiguration.overlay;
     
     if (overlay != nil) {
-        if ([overlay respondsToSelector:@selector(updateWithVideoTime:)]) {
-            [overlay updateWithVideoTime:timeSeconds];
+        CGSize videoSize = CGSizeMake(CVPixelBufferGetWidth(outputPixelBuffer), CVPixelBufferGetHeight(outputPixelBuffer));
+
+        BOOL onMainThread = NO;
+        if ([overlay respondsToSelector:@selector(requiresUpdateOnMainThreadAtVideoTime:videoSize:)]) {
+            onMainThread = [overlay requiresUpdateOnMainThreadAtVideoTime:timeSeconds videoSize:videoSize];
         }
 
         CGContextRef ctx = SCCreateContextFromPixelBuffer(outputPixelBuffer);
-        overlay.frame = CGRectMake(0, 0, CVPixelBufferGetWidth(outputPixelBuffer), CVPixelBufferGetHeight(outputPixelBuffer));
-        [overlay layoutIfNeeded];
-        
+
+        void (^layoutBlock)() = ^{
+            overlay.frame = CGRectMake(0, 0, videoSize.width, videoSize.height);
+
+            if ([overlay respondsToSelector:@selector(updateWithVideoTime:)]) {
+                [overlay updateWithVideoTime:timeSeconds];
+            }
+
+            [overlay layoutIfNeeded];
+        };
+
+        if (onMainThread) {
+            dispatch_sync(dispatch_get_main_queue(), layoutBlock);
+        } else {
+            layoutBlock();
+        }
+
         [overlay.layer renderInContext:ctx];
         
         CGContextRelease(ctx);
@@ -270,20 +288,22 @@ static CGContextRef SCCreateContextFromPixelBuffer(CVPixelBufferRef pixelBuffer)
                 SCIOPixelBuffers *videoBuffer = nil;
                 SCSampleBufferHolder *bufferHolder = nil;
 
+                CMTime time;
                 if (videoProcessingQueue != nil) {
                     videoBuffer = [videoProcessingQueue dequeue];
+                    time = videoBuffer.time;
                 } else {
                     bufferHolder = [videoReadingQueue dequeue];
+                    if (bufferHolder != nil) {
+                        time = CMSampleBufferGetPresentationTimeStamp(bufferHolder.sampleBuffer);
+                    }
                 }
 
                 if (videoBuffer != nil || bufferHolder != nil) {
-                    if (CMTIME_COMPARE_INLINE(videoBuffer.time, >=, strongSelf.nextAllowedVideoFrame)) {
-                        CMTime time;
+                    if (CMTIME_COMPARE_INLINE(time, >=, strongSelf.nextAllowedVideoFrame)) {
                         if (bufferHolder != nil) {
-                            time = CMSampleBufferGetPresentationTimeStamp(bufferHolder.sampleBuffer);
                             shouldReadNextBuffer = [strongSelf.videoInput appendSampleBuffer:bufferHolder.sampleBuffer];
                         } else {
-                            time = videoBuffer.time;
                             shouldReadNextBuffer = [strongSelf encodePixelBuffer:videoBuffer.outputPixelBuffer presentationTime:videoBuffer.time];
                         }
 
@@ -643,6 +663,7 @@ static CGContextRef SCCreateContextFromPixelBuffer(CVPixelBufferRef pixelBuffer)
     [[NSFileManager defaultManager] removeItemAtURL:self.outputUrl error:nil];
     
     _writer = [AVAssetWriter assetWriterWithURL:self.outputUrl fileType:self.outputFileType error:&error];
+    _writer.shouldOptimizeForNetworkUse = _shouldOptimizeForNetworkUse;
     _writer.metadata = [SCRecorderTools assetWriterMetadata];
 
     EnsureSuccess(error, completionHandler);

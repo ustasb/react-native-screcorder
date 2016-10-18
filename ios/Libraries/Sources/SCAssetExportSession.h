@@ -59,7 +59,7 @@
 @property (readonly, nonatomic) SCAudioConfiguration *__nonnull audioConfiguration;
 
 /**
- If an error occured during the export, this will contain that error
+ If an error occurred during the export, this will contain that error
  */
 @property (readonly, nonatomic) NSError *__nullable error;
 
@@ -79,6 +79,12 @@
  Default is YES
  */
 @property (assign, nonatomic) BOOL translatesFilterIntoComposition;
+
+/**
+ Indicates whether the movie should be optimized for network use.
+ Default is NO
+ */
+@property (assign, nonatomic) BOOL shouldOptimizeForNetworkUse;
 
 /**
  The current progress

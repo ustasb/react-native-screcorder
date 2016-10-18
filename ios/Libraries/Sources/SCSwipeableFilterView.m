@@ -169,13 +169,13 @@
     NSArray *filters = self.filters;
 
     CGFloat xImage = extent.size.width * -remainingRatio;
-    CIImage *outputImage = [CIImage new];
+    CIImage *outputImage = [CIImage imageWithColor:[CIColor colorWithRed:0 green:0 blue:0]];
 
     while (index <= upIndex) {
         NSInteger currentIndex = index % filters.count;
         SCFilter *filter = [filters objectAtIndex:currentIndex];
         CIImage *filteredImage = [filter imageByProcessingImage:image atTime:imageTime];
-        filteredImage = [filteredImage imageByCroppingToRect:CGRectMake(xImage, 0, extent.size.width, extent.size.height)];
+        filteredImage = [filteredImage imageByCroppingToRect:CGRectMake(extent.origin.x + xImage, extent.origin.y, extent.size.width, extent.size.height)];
         outputImage = [filteredImage imageByCompositingOverImage:outputImage];
         xImage += extent.size.width;
         index++;
