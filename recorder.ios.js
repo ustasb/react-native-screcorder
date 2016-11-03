@@ -134,7 +134,7 @@ export default class Recorder extends Component {
 
     return (
       <RNRecorder {...nativeProps}>
-        <View style={styles.wrapper}>{this.props.children}</View>
+        <View style={styles.wrapper} pointerEvents="none">{this.props.children}</View>
       </RNRecorder>
     );
   }

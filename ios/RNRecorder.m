@@ -30,6 +30,8 @@
    
    /* Audio quality */
    NSString *_audioQuality;
+
+   SCRecorderToolsView *_focusView;
 }
 
 #pragma mark - Init
@@ -282,6 +284,13 @@
       _recorder.previewView = _previewView;
       [_previewView setBackgroundColor:[UIColor blackColor]];
       [self insertSubview:_previewView atIndex:0];
+
+      _focusView = [[SCRecorderToolsView alloc] initWithFrame:_previewView.bounds];
+      _focusView.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
+      _focusView.recorder = _recorder;
+      _focusView.outsideFocusTargetImage = [UIImage imageNamed:@"camera_focus_button"];
+      [_previewView addSubview:_focusView];
+
       [_recorder startRunning];
    
       _session = [SCRecordSession recordSession];
