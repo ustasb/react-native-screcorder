@@ -88,6 +88,11 @@ export default class Recorder extends Component {
     NativeModules.RNRecorderManager.removeSegmentAtIndex(index);
   }
 
+  // Turn off camera flash.
+  turnOffFlash() {
+    NativeModules.RNRecorderManager.turnOffFlash();
+  }
+
   /*** RENDER ***/
 
   render() {

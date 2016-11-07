@@ -14,6 +14,7 @@
 - (SCRecordSessionSegment*)lastSegment;
 - (void)removeLastSegment;
 - (void)removeAllSegments;
+- (void)turnOffFlash;
 - (void)removeSegmentAtIndex:(NSInteger)index;
 - (void)save:(void(^)(NSError *error, NSURL *outputUrl))callback;
 - (NSString*)saveImage:(UIImage*)image;

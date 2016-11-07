@@ -231,6 +231,11 @@
    [_session removeAllSegments:true];
 }
 
+- (void)turnOffFlash
+{
+   _recorder.flashMode = SCFlashModeOff;
+}
+
 - (void)removeSegmentAtIndex:(NSInteger)index
 {
    [_session removeSegmentAtIndex:index deleteFile:true];
@@ -313,6 +318,7 @@
 
 - (void)removeFromSuperview
 {
+   [self turnOffFlash];
    [super removeFromSuperview];
 }
 

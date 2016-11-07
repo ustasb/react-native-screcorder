@@ -90,4 +90,9 @@ RCT_EXPORT_METHOD(save:(RCTResponseSenderBlock)callback)
     }];
 }
 
+RCT_EXPORT_METHOD(turnOffFlash)
+{
+    [_recorderView turnOffFlash];
+}
+
 @end
