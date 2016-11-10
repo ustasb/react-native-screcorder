@@ -50,6 +50,16 @@
    return self;
 }
 
+-(void)dealloc
+{
+   // prevents: "Deactivating an audio session that has running I/O."
+   [[AVAudioSession sharedInstance] setActive:NO error:nil];
+   [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
+   [[AVAudioSession sharedInstance] setActive:YES error:nil];
+
+   _recorder.delegate = nil;
+}
+
 #pragma mark - Setter
 
 - (void)setConfig:(NSDictionary *)config
@@ -285,6 +295,11 @@
    [super layoutSubviews];
    
    if (_previewView == nil) {
+      [[AVAudioSession sharedInstance] setActive:NO error:nil];
+      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionMixWithOthers|AVAudioSessionCategoryOptionDefaultToSpeaker error:nil];
+      [[AVAudioSession sharedInstance] setMode:AVAudioSessionModeVideoRecording error:nil];
+      [[AVAudioSession sharedInstance] setActive:YES error:nil];
+
       _previewView = [[UIView alloc] initWithFrame:self.bounds];
       _recorder.previewView = _previewView;
       [_previewView setBackgroundColor:[UIColor blackColor]];
