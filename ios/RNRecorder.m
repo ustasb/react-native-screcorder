@@ -308,7 +308,10 @@
       _focusView = [[SCRecorderToolsView alloc] initWithFrame:_previewView.bounds];
       _focusView.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
       _focusView.recorder = _recorder;
-      _focusView.outsideFocusTargetImage = [UIImage imageNamed:@"camera_focus_button"];
+
+      // Too buggy. Often gets stuck in the middle of the screen.
+      // _focusView.outsideFocusTargetImage = [UIImage imageNamed:@"camera_focus_button"];
+
       [_previewView addSubview:_focusView];
 
       [_recorder startRunning];
