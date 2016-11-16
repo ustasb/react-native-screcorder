@@ -76,6 +76,7 @@
    _recorder.flashMode = flash;
    
    // Video config
+   _recorder.videoConfiguration.sizeAsSquare = true;
    _recorder.videoConfiguration.enabled = [RCTConvert BOOL:[video objectForKey:@"enabled"]];
    _recorder.videoConfiguration.bitrate = [RCTConvert int:[video objectForKey:@"bitrate"]];
    _recorder.videoConfiguration.timeScale = [RCTConvert float:[video objectForKey:@"timescale"]];
