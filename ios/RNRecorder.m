@@ -261,7 +261,7 @@
    assetExportSession.audioConfiguration.preset = _audioQuality;
    
    // Apply filters
-   assetExportSession.videoConfiguration.filter = [self createFilter];
+   //assetExportSession.videoConfiguration.filter = [self createFilter];
 
    [assetExportSession exportAsynchronouslyWithCompletionHandler: ^{
       callback(assetExportSession.error, assetExportSession.outputUrl);
