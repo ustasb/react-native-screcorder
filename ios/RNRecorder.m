@@ -42,9 +42,11 @@
    if ((self = [super init])) {
       if (_recorder == nil) {
          _recorder = [SCRecorder recorder];
-         _recorder.captureSessionPreset = [SCRecorderTools bestCaptureSessionPresetCompatibleWithAllDevices];
          _recorder.delegate = self;
          _recorder.initializeSessionLazily = NO;
+
+         [self changeMediaType:@"photo"];  // Start in photo mode.
+         _recorder.previewLayer.videoGravity = AVLayerVideoGravityResizeAspect;
       }
    }
    return self;
@@ -118,6 +120,15 @@
    }
    if (_session != nil) {
       _session.fileType = _videoFormat;
+   }
+}
+
+- (void)changeMediaType:(NSString *)mediaType
+{
+   if ([mediaType isEqualToString:@"photo"]) {
+      _recorder.captureSessionPreset = AVCaptureSessionPresetPhoto;
+   } else {
+      _recorder.captureSessionPreset = [SCRecorderTools bestCaptureSessionPresetCompatibleWithAllDevices];
    }
 }
 

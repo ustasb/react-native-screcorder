@@ -23,10 +23,8 @@ RCT_EXPORT_VIEW_PROPERTY(device, NSString);
 
 - (UIView *)view
 {
-    // Alloc UI element
-    if (_recorderView == nil) {
-        _recorderView = [[RNRecorder alloc] initWithEventDispatcher:self.bridge.eventDispatcher];
-    }
+    _recorderView = [[RNRecorder alloc] initWithEventDispatcher:self.bridge.eventDispatcher];
+    
     return _recorderView;
 }
 
@@ -93,6 +91,11 @@ RCT_EXPORT_METHOD(save:(RCTResponseSenderBlock)callback)
 RCT_EXPORT_METHOD(turnOffFlash)
 {
     [_recorderView turnOffFlash];
+}
+
+RCT_EXPORT_METHOD(changeMediaType:(NSString *)mediaType)
+{
+    [_recorderView changeMediaType:mediaType];
 }
 
 @end

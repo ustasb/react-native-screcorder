@@ -93,6 +93,10 @@ export default class Recorder extends Component {
     NativeModules.RNRecorderManager.turnOffFlash();
   }
 
+  changeMediaType(mediaType) {
+    NativeModules.RNRecorderManager.changeMediaType(mediaType);
+  }
+
   /*** RENDER ***/
 
   render() {
