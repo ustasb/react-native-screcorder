@@ -321,8 +321,7 @@
       _focusView.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
       _focusView.recorder = _recorder;
 
-      // Too buggy. Often gets stuck in the middle of the screen.
-      // _focusView.outsideFocusTargetImage = [UIImage imageNamed:@"camera_focus_button"];
+      _focusView.outsideFocusTargetImage = [UIImage imageNamed:@"camera_focus_button"];
 
       [_previewView addSubview:_focusView];
 
