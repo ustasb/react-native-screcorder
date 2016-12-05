@@ -10,27 +10,32 @@
 {
    /* Required to publish events */
    RCTEventDispatcher *_eventDispatcher;
+
    /* SCRecorder instance */
    SCRecorder *_recorder;
+
    /* SCRecorder session instance */
    SCRecordSession *_session;
+
    /* Preview view ¨*/
    UIView *_previewView;
+
    /* Configuration */
    NSDictionary *_config;
+
    /* Camera type (front || back) */
    NSString *_device;
-   
+
    /* Video format */
    NSString *_videoFormat;
+
    /* Video quality */
    NSString *_videoQuality;
-   /* Video filters */
-   NSArray *_videoFilters;
-   
+
    /* Audio quality */
    NSString *_audioQuality;
 
+   /* Allow tap-to-focus + zooming */
    SCRecorderToolsView *_focusView;
 }
 
@@ -38,15 +43,13 @@
 
 - (instancetype)initWithEventDispatcher:(RCTEventDispatcher *)eventDispatcher
 {
-   
    if ((self = [super init])) {
       if (_recorder == nil) {
          _recorder = [SCRecorder recorder];
          _recorder.delegate = self;
          _recorder.initializeSessionLazily = NO;
-
-         [self changeMediaType:@"photo"];  // Start in photo mode.
          _recorder.previewLayer.videoGravity = AVLayerVideoGravityResizeAspect;
+         [self changeMediaType:@"photo"];  // Start in photo mode.
       }
    }
    return self;
@@ -59,6 +62,7 @@
    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
    [[AVAudioSession sharedInstance] setActive:YES error:nil];
 
+   _recorder.previewView = nil; // !IMPORTANT! Prevents the "Cannot Encode" error.
    _recorder.delegate = nil;
 }
 
@@ -69,14 +73,14 @@
    _config = config;
    NSDictionary *video  = [RCTConvert NSDictionary:[config objectForKey:@"video"]];
    NSDictionary *audio  = [RCTConvert NSDictionary:[config objectForKey:@"audio"]];
-   
+
    // Recorder config
    _recorder.autoSetVideoOrientation = [RCTConvert BOOL:[config objectForKey:@"autoSetVideoOrientation"]];
 
    // Flash config
    NSInteger flash = (int)[RCTConvert NSInteger:[config objectForKey:@"flashMode"]];
    _recorder.flashMode = flash;
-   
+
    // Video config
    _recorder.videoConfiguration.sizeAsSquare = true;
    _recorder.videoConfiguration.enabled = [RCTConvert BOOL:[video objectForKey:@"enabled"]];
@@ -85,8 +89,7 @@
    _videoFormat = [RCTConvert NSString:[video objectForKey:@"format"]];
    [self setVideoFormat:_videoFormat];
    _videoQuality = [RCTConvert NSString:[video objectForKey:@"quality"]];
-   _videoFilters = [RCTConvert NSArray:[video objectForKey:@"filters"]];
-   
+
    // Audio config
    _recorder.audioConfiguration.enabled = [RCTConvert BOOL:[audio objectForKey:@"enabled"]];
    _recorder.audioConfiguration.bitrate = [RCTConvert int:[audio objectForKey:@"bitrate"]];
@@ -100,24 +103,27 @@
    }
 }
 
-- (void)setDevice:(NSString*)device
+- (void)setDevice:(NSString *)device
 {
    _device = device;
-   if ([device  isEqual: @"front"]) {
+
+   if ([device isEqual:@"front"]) {
       _recorder.device = AVCaptureDevicePositionFront;
-   } else if ([device  isEqual: @"back"]) {
+   } else if ([device isEqual:@"back"]) {
       _recorder.device = AVCaptureDevicePositionBack;
    }
 }
 
-- (void)setVideoFormat:(NSString*)format
+- (void)setVideoFormat:(NSString *)format
 {
    _videoFormat = format;
-   if ([_videoFormat  isEqual: @"MPEG4"]) {
+
+   if ([_videoFormat isEqual:@"MPEG4"]) {
       _videoFormat = AVFileTypeMPEG4;
-   } else if ([_videoFormat  isEqual: @"MOV"]) {
+   } else if ([_videoFormat isEqual:@"MOV"]) {
       _videoFormat = AVFileTypeQuickTimeMovie;
    }
+
    if (_session != nil) {
       _session.fileType = _videoFormat;
    }
@@ -134,80 +140,13 @@
 
 #pragma mark - Private Methods
 
-- (NSArray *)sortFilterKeys:(NSDictionary *)dictionary {
-   
-   NSArray *keys = [dictionary allKeys];
-   NSArray *sortedKeys = [keys sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
-      NSString *key1 = (NSString*)obj1;
-      
-      if ([key1 isEqualToString:@"CIfilter"] || [key1 isEqualToString:@"file"])
-         return (NSComparisonResult)NSOrderedAscending;
-      else
-         return (NSComparisonResult)NSOrderedDescending;
-   }];
-   
-   return sortedKeys;
-}
-
-- (SCFilter*)createFilter
-{
-   SCFilter *filter = [SCFilter emptyFilter];
-
-   for (NSDictionary* subfilter in _videoFilters) {
-      SCFilter *subscfilter = [SCFilter emptyFilter];
-      NSArray *sortedKeys = [self sortFilterKeys:subfilter];
-      
-      for (NSString* propkey in sortedKeys) {
-         
-         // CIfilter specified
-         if ([propkey isEqualToString:@"CIfilter"]) {
-            NSString *name = [RCTConvert NSString:[subfilter objectForKey:propkey]];
-            subscfilter = [SCFilter filterWithCIFilterName:name];
-            if (subscfilter == nil) {
-               RCTLogError(@"CIfilter %@ not found", name);
-               subscfilter = [SCFilter emptyFilter];
-            }
-         }
-         // Filter file specified
-         else if ([propkey isEqualToString:@"file"]) {
-            NSString *path = [RCTConvert NSString:[subfilter objectForKey:propkey]];
-            subscfilter = [SCFilter filterWithContentsOfURL:[[NSBundle mainBundle] URLForResource:path withExtension:@"cisf"]];
-            if (subscfilter == nil) {
-               RCTLogError(@"CSIF file %@ not found", path);
-               subscfilter = [SCFilter emptyFilter];
-            }
-         }
-         // Animations specified
-         else if ([propkey isEqualToString:@"animations"]) {
-            NSArray *animations = [RCTConvert NSArray:[subfilter objectForKey:propkey]];
-
-            for (NSDictionary* anim in animations) {
-               NSString *name = [RCTConvert NSString:[anim objectForKey:@"name"]];
-               NSNumber *startValue = [RCTConvert NSNumber:[anim objectForKey:@"startValue"]];
-               NSNumber *endValue = [RCTConvert NSNumber:[anim objectForKey:@"endValue"]];
-               double   startTime = [RCTConvert double:[anim objectForKey:@"startTime"]];
-               double   duration = [RCTConvert double:[anim objectForKey:@"duration"]];
-
-               [subscfilter addAnimationForParameterKey:name startValue:startValue endValue:endValue startTime:startTime duration:duration];
-            }
-         }
-         else {
-            NSNumber *val = [RCTConvert NSNumber:[subfilter objectForKey:propkey]];
-            [subscfilter setParameterValue:val forKey:propkey];
-         }
-      }
-      [filter addSubFilter:subscfilter];
-   }
-   return filter;
-}
-
 - (NSString*)saveImage:(UIImage*)image
 {
    NSString *name = [[NSProcessInfo processInfo] globallyUniqueString];
    name = [name stringByAppendingString:@".jpeg"];
    NSString *filePath = [NSTemporaryDirectory() stringByAppendingPathComponent:name];
 
-   if ([_device isEqual: @"front"]) {
+   if ([_device isEqual:@"front"]) {
       image = [UIImage imageWithCGImage:image.CGImage
                                   scale:image.scale
                             orientation:UIImageOrientationLeftMirrored];
@@ -267,13 +206,11 @@
 {
    AVAsset *asset = _session.assetRepresentingSegments;
    SCAssetExportSession *assetExportSession = [[SCAssetExportSession alloc] initWithAsset:asset];
+
    assetExportSession.outputFileType = _videoFormat;
    assetExportSession.outputUrl = [_session outputUrl];
    assetExportSession.videoConfiguration.preset = _videoQuality;
    assetExportSession.audioConfiguration.preset = _audioQuality;
-   
-   // Apply filters
-   //assetExportSession.videoConfiguration.filter = [self createFilter];
 
    [assetExportSession exportAsynchronouslyWithCompletionHandler: ^{
       callback(assetExportSession.error, assetExportSession.outputUrl);
@@ -305,7 +242,7 @@
 - (void)layoutSubviews
 {
    [super layoutSubviews];
-   
+
    if (_previewView == nil) {
       [[AVAudioSession sharedInstance] setActive:NO error:nil];
       [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionMixWithOthers|AVAudioSessionCategoryOptionDefaultToSpeaker error:nil];
@@ -319,20 +256,16 @@
 
       _focusView = [[SCRecorderToolsView alloc] initWithFrame:_previewView.bounds];
       _focusView.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
-      _focusView.recorder = _recorder;
-
       _focusView.outsideFocusTargetImage = [UIImage imageNamed:@"camera_focus_button"];
-
+      _focusView.recorder = _recorder;
       [_previewView addSubview:_focusView];
 
       [_recorder startRunning];
-   
+
       _session = [SCRecordSession recordSession];
       [self setVideoFormat:_videoFormat];
       _recorder.session = _session;
    }
-   
-   return;
 }
 
 - (void)insertReactSubview:(UIView *)view atIndex:(NSInteger)atIndex
